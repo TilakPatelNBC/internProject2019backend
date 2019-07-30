@@ -23,17 +23,19 @@ app = Flask(__name__)
 
 application = Flask(__name__)
 
-@app.route('/')
-def default():
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    print(request.data)
     return render_template('404page.html')
 
 @app.route('/videos') #requires results query arg
 def videos():
-    if 'results' in request.args:
-        length = request.args.get('results')
+    if 'results' in request.json:
+        length = request.json.get('results')
         request_url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=UCvJJ_dzjViJCoLf5uKUTwoA&maxResults=' + str(length) + '&order=date&key=AIzaSyDLgcYIKMiMVM2HM3liPbzrJyJTnVUq1oY'
         req = requests.get(request_url)
-        yt_response = req.json()
+        yt_response = req.json
         yt_response['status'] = req.status_code
         return yt_response, req.status_code
     else:
@@ -41,7 +43,6 @@ def videos():
 
 @app.route('/latest-articles') #returns the latest articles filtered by the eyebrow
 def articles():
-    
     headers = {
         'Accept-Encoding': 'gzip, deflate, br',
         'Content-Type': 'application/json',
@@ -53,18 +54,20 @@ def articles():
 
     data = '{"query":"{\\npage(\\n path:\\"/us-top-news-and-analysis/\\") {\\n brand\\n layout {\\n   columns {\\n     span\\n     modules {\\n       data {\\n          ...on heroLedePlusThree {\\n  id\\n            datePublished\\n  assets {\\n    id\\n    description\\n    title\\n    headline\\n    shorterDescription\\n    url\\n    promoImage {\\n      url\\n    }\\n  }\\n}\\n       }\\n      \\n     }\\n   }\\n }\\n}\\n}"}'
     response = requests.post('https://qa-aws01webql.cnbc.com/graphql', headers=headers, data=data)
-    data = response.json()['data']['page']['layout'][3]['columns'][0]['modules'][0]
+    data = response.json['data']['page']['layout'][3]['columns'][0]['modules'][0]
     return data, 200
     
 
 @app.route('/create-user', methods = ['POST']) #creates a user and returns the information about the user
 def create_user():
-    name = 'invalid' if ('name' not in request.args) else request.args.get('name')
-    email = 'invalid' if ('email' not in request.args) else request.args.get('email')
-    age = -1 if ('age' not in request.args) else request.args.get('age')
-    industry = 'invalid' if ('industry' not in request.args) else request.args.get('industry')
-    interests = 'invalid' if ('interests' not in request.args) else request.args.get('interests')
-    password = 'invalid' if ('password' not in request.args) else request.args.get('password')
+    if 'body' in request.json:
+        return {'message': 'no body'}, 400
+    name = 'invalid' if ('name' not in request.json) else request.json.get('name')
+    email = 'invalid' if ('email' not in request.json) else request.json.get('email')
+    age = -1 if ('age' not in request.json) else request.json.get('age')
+    industry = 'invalid' if ('industry' not in request.json) else request.json.get('industry')
+    interests = 'invalid' if ('interests' not in request.json) else request.json.get('interests')
+    password = 'invalid' if ('password' not in request.json) else request.json.get('password')
     if name == "invalid" or email == "invalid" or age <= 8 or industry == "invalid" or interests == "invalid" or password == "invalid":
         return {'message': 'invalid parameters'}, 400
     users = db.Users
@@ -79,6 +82,12 @@ def create_user():
     }).inserted_id
     jss = json.loads(dumps(users.find_one({"_id": user_id})))
     return jss, 200
+
+
+
+# @app.route('/update-articles', methods = ['PUT'])
+# def update_articles():
+    
 
 if __name__ == "__main__":
     app.run()
