@@ -22,7 +22,7 @@ lazy-object-proxy==1.4.1
 MarkupSafe==1.1.1
 mccabe==0.6.1
 numpy==1.16.4
-pipenv==2018.11.26
+pipenv==2022.1.8
 promise==2.2.1
 pylint==1.9.4
 python-dotenv==0.10.3
